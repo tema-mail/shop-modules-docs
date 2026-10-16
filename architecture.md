@@ -155,7 +155,8 @@ title: Архитектура shop-modules
 ```
 apps/api  apps/worker  apps/admin
 packages/kernel  packages/db        деньги, outbox, настройки, исполнитель графов, сверка
-modules/<имя>/{migrations, api.ts, service.ts, events.ts, config.ts, flows.ts, tests}
+modules/<имя>/{api.ts, service.ts, events.ts, config.ts, flows.ts, tests}   таблицы – в схеме модуля
+apps/api/migrations                 одна очередь миграций ядра и модулей (ПЛАН-S2, решение 2)
 sdk/astro                           клиент из OpenAPI + Preact-острова: вход, корзина, оформление, ЛК
 deploy/                             compose, Caddyfile, бэкап, обновление, реестр экземпляров
 .claude/{agents, skills}
@@ -178,7 +179,7 @@ LLM в рантайме нет: деньги должны воспроизвод
 ## Порядок работы
 
 1. ~~Денежное ядро~~ (сделано, `packages/kernel/money.ts`).
-2. Миграции и `001_kernel.sql` (outbox, idempotency, module_settings, secrets) + compose для разработки + тест на настоящем Postgres.
+2. Миграции и `002_kernel.sql` (outbox, idempotency, event_handled, module_settings, secrets; ПЛАН-S2) + compose для разработки + тест на настоящем Postgres.
 3. Outbox и диспетчер в pg-boss + тест «событие ровно один раз после сбоя».
 4. Журнал баллов + тест: повтор ключа без второй проводки, сторно, UPDATE и DELETE запрещены триггером.
 5. Настройки модулей и правила уровней + тест «правило на момент заказа», проверка зависимостей модулей.
