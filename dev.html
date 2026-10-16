@@ -182,7 +182,7 @@ sequenceDiagram
   <section id="graph">
     <h2>5. Процессы графом</h2>
     <p><b>Сделано (ADR-002, этапы 1–3):</b> пять процессов (оформление, оплата, завершение, отмена, возврат) – схемы-данные в <code>modules/orders/flows-v2.ts</code>. Движок <code>packages/kernel/flow-v2.ts</code> исполняет ровно проверенную и замороженную схему: действие возвращает факты, ветку выбирает условие схемы. Страница «Процессы» рисует граф из тех же объектов. Заказ закреплён за версией набора процессов.</p>
-    <p><b>Дальше (этап 4):</b> редактор схемы в админке и публикация нового набора – с прогоном путей, разницей с прошлой версией и выгрузкой в git.</p>
+    <p><b>Сделано (этап 4):</b> редактор процессов в админке – форма «шаги и переходы» над черновиком (<code>packages/kernel/flow-edit.ts</code>), живая проверка и превью; публикация набора – разница с прошлой версией и все пути (<code>flow-diff.ts</code>), журнал опубликованных версий, выгрузка JSON для git. Новые заказы идут по последнему набору, оформленные доигрывают по своему.</p>
     <div class="diagram"><pre class="mermaid">
 flowchart LR
   ED["Редактор процессов<br/>в админке"] --> DR["Черновик схемы<br/>JSON"]
@@ -249,6 +249,7 @@ flowchart LR
       <tr><th>Путь</th><th>Что там</th></tr>
       <tr><td><code>packages/kernel/money.ts</code></td><td>копейки, проценты, разнесение суммы по строкам</td></tr>
       <tr><td><code>packages/kernel/flow-schema.ts</code> · <code>flow-set.ts</code></td><td>формат схемы процесса, условия JSON Logic, проверка схемы и всего набора</td></tr>
+      <tr><td><code>packages/kernel/flow-edit.ts</code> · <code>flow-diff.ts</code></td><td>правки черновика для редактора; разница версий и все пути процесса</td></tr>
       <tr><td><code>packages/kernel/flow-v2.ts</code> · <code>flow.ts</code></td><td>движок процессов: реестр действий, <code>requires</code>, исполнение; запись журнала шагов (коды ошибок, без ПДн)</td></tr>
       <tr><td><code>packages/kernel/log.ts</code></td><td>структурные логи без ПДн</td></tr>
       <tr><td><code>packages/kernel/modules.ts</code> · <code>time.ts</code></td><td>зависимости модулей, версии настроек на дату; строгий разбор дат ISO с поясом</td></tr>
