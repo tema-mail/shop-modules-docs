@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shop-modules для программистов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: документ одной колонкой; стек таблицей, модули сеткой, поток денег графом */
+:root{
+  --bg:#f7f5f4; --surface:#ffffff; --fg:#1d1a1a; --muted:#6b6261; --line:#e4dedc;
+  --accent:#d6403a; --accent-soft:#fbe7e5; --warn:#a15c00; --warn-soft:#fff1dc; --ok:#2f7a4a; --ok-soft:#e3f3e8;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151213; --surface:#1e1a1a; --fg:#f1ecea; --muted:#a59c9a; --line:#352e2d;
+  --accent:#ff6a5f; --accent-soft:#3a1d1b; --warn:#f0b35a; --warn-soft:#33270f; --ok:#6fcf8f; --ok-soft:#15291c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151213; --surface:#1e1a1a; --fg:#f1ecea; --muted:#a59c9a; --line:#352e2d;
+  --accent:#ff6a5f; --accent-soft:#3a1d1b; --warn:#f0b35a; --warn-soft:#33270f; --ok:#6fcf8f; --ok-soft:#15291c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--f-body);padding-inline:16px;padding-block:40px 64px}
+.wrap{max-width:900px;margin:0 auto;display:grid;gap:44px}
+h1,h2{font-family:var(--f-display);text-wrap:balance;margin:0;font-style:italic;text-transform:uppercase}
+h1{font-size:clamp(28px,6vw,46px);font-weight:800;line-height:1.05;color:var(--accent)}
+h2{font-size:clamp(19px,3.4vw,24px);font-weight:800;line-height:1.15}
+h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+p{margin:0;max-width:70ch}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--accent-soft);padding:1px 5px;border-radius:4px;word-break:break-word}
+section{display:grid;gap:18px;padding-top:28px;border-top:2px solid var(--fg)}
+.lead{display:grid;gap:14px}
+.lead p{color:var(--muted)}
+.verdict{display:grid;gap:10px;padding:20px;border-radius:12px;background:var(--surface);border:2px solid var(--accent)}
+.verdict p{color:var(--fg)}
+ul,ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px 28px}
+.cols>div{display:grid;gap:8px;min-width:0;align-content:start}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.c-ok{background:var(--ok-soft);color:var(--ok)} .c-warn{background:var(--warn-soft);color:var(--warn)} .c-no{background:var(--accent-soft);color:var(--accent)}
+.diagram{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.box{display:grid;gap:8px;padding:14px 16px;border-radius:10px}
+.box.warn{background:var(--warn-soft)} .box.warn h3{color:var(--warn)}
+.box.ok{background:var(--ok-soft)} .box.ok h3{color:var(--ok)}
+.steps{counter-reset:s;display:grid;gap:12px;list-style:none;padding:0}
+.steps li{display:grid;grid-template-columns:2.4em 1fr;gap:4px 12px;align-items:start}
+.steps li::before{counter-increment:s;content:counter(s);font-family:var(--f-display);font-weight:800;font-style:italic;color:var(--accent);font-size:20px;line-height:1.2;grid-row:span 2}
+.steps b{display:block}
+.steps span{color:var(--muted);font-size:15px}
+.foot{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="lead">
+    <h3>Документация для программистов · обновляется при каждом изменении архитектуры</h3>
+    <h1>Как устроен shop-modules</h1>
+    <p><a href="./">← Обзор стека</a> · <a href="architecture.html">Полная архитектура →</a> · <a href="adr-002.html">ADR-002: живые процессы и логи →</a></p>
+    <p>Модульная система для интернет-магазинов: клиенты, каталог, заказы, бонусы, статусы, рефералы, промокоды, доставка, оплата. Подключается к сайту магазина на Astro. Эта страница – карта для разработчика: что из чего состоит, как ходят данные, где что лежит в коде. Подробности и решения – в <a href="architecture.html">архитектуре</a>.</p>
+  </header>
+
+  <div class="verdict">
+    <h3>Коротко</h3>
+    <p><b>Правила денег – чистые функции</b> в <code>modules/&lt;модуль&gt;/rules.ts</code>: без базы и сети, покрыты тестами, включая проверки свойствами на тысячах случайных примеров. Вокруг них – слой хранения и API. <b>Процессы</b> (оформление, оплата, завершение, отмена, возврат) описаны графом и исполняются движком по этому графу, каждый шаг пишется в журнал.</p>
+    <p><b>Сейчас готово:</b> все правила, движок процессов, демо-магазин, где «сервер» работает в браузере. <b>Следующий этап:</b> настоящий сервер (Fastify + PostgreSQL) на тех же правилах, затем оплата, доставка и логи.</p>
+  </div>
+
+  <section>
+    <h2>1. Система целиком</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  subgraph shop["Сайт магазина (Astro + Preact)"]
+    UI["Каталог · корзина · ЛК"]
+  end
+  subgraph core["shop-modules (сервер магазина)"]
+    API["api – Fastify"]
+    W["worker – фоновые задачи (pg-boss)"]
+    DB[("PostgreSQL – своя схема на модуль")]
+  end
+  ADM["Админка магазина<br/>настройки, промокоды, процессы"]
+  LOG["Логи и метрики"]
+  UI -- "REST + cookie-сессия" --> API
+  ADM --> API
+  API --> DB
+  W --> DB
+  API -. "события (outbox)" .-> W
+  W --> PAY["Т-Банк эквайринг"]
+  W --> DLV["СДЭК · Яндекс Доставка"]
+  W --> MAIL["Почта: коды входа, письма"]
+  UI --> ADR["Подсказки адресов<br/>DaData / свой OSM"]
+  PAY -- "вебхук оплаты" --> API
+  DLV -- "статусы доставки" --> API
+  API --> LOG
+  W --> LOG
+</pre></div>
+    <p>Один экземпляр на магазин: свои контейнеры и своя база, данные клиентов разных магазинов не смешиваются.</p>
+  </section>
+
+  <section>
+    <h2>2. Модули и кто кого слушает</h2>
+    <div class="tbl"><table>
+      <tr><th>Модуль</th><th>Код</th><th>Отвечает за</th><th>Публикует</th><th>Слушает</th></tr>
+      <tr><td>Деньги, время, процессы, настройки</td><td><code>packages/kernel/</code></td><td>копейки, проценты, разнесение по строкам; строгие даты; движок процессов; версии настроек и зависимости модулей</td><td>–</td><td>–</td></tr>
+      <tr><td>Клиенты</td><td><code>customers</code></td><td>вход по коду, сессии, профиль, адреса</td><td>customer.registered</td><td>–</td></tr>
+      <tr><td>Заказы</td><td><code>modules/orders/</code></td><td>расчёт корзины, статусы, отмены, возвраты, графы процессов</td><td>order.placed / paid / delivered / settled / cancelled / returned</td><td>оплата, доставка</td></tr>
+      <tr><td>Бонусы</td><td><code>modules/bonus/</code></td><td>журнал баллов: начисления, удержания, списания, сторно, сгорание</td><td>bonus.*</td><td>order.*, награды за друга</td></tr>
+      <tr><td>Статусы</td><td><code>modules/tiers/</code></td><td>уровень по сумме покупок, процент кешбэка</td><td>tier.changed</td><td>order.settled, order.returned</td></tr>
+      <tr><td>Рефералы</td><td><code>modules/referral/</code></td><td>код друга, награды обеим сторонам</td><td>referral.reward_due</td><td>customer.registered, order.settled</td></tr>
+      <tr><td>Промокоды</td><td><code>modules/promotions/</code></td><td>проверка кода, лимиты, резерв → списание → освобождение, персональные коды</td><td>promo.redeemed</td><td>order.*</td></tr>
+      <tr><td>Доставка</td><td><code>delivery</code></td><td>адреса с подсказками, пункты выдачи, снимок адреса в заказе, заявки в службы</td><td>shipment.status_changed</td><td>order.paid, order.cancelled</td></tr>
+    </table></div>
+    <p>Модуль не лезет в таблицы и внутренности соседа: снаружи доступны только <code>rules.ts</code> (чистые правила) и <code>api.ts</code>. Модули включаются в настройках магазина; зависимости проверяются: «Статусы» без «Бонусов» не включить.</p>
+  </section>
+
+  <section>
+    <h2>3. Данные</h2>
+    <div class="diagram"><pre class="mermaid">
+erDiagram
+  CUSTOMER ||--o{ ADDRESS : "адреса и пункты выдачи"
+  CUSTOMER ||--o{ ORDER : "заказы"
+  ORDER ||--|{ ORDER_LINE : "строки со скидками"
+  ORDER ||--o| DELIVERY_SNAPSHOT : "куда везём на момент заказа"
+  ORDER ||--o{ RETURN : "возвраты"
+  CUSTOMER ||--o{ POSTING : "журнал баллов (только дописывается)"
+  ORDER ||--o{ POSTING : "кешбэк, удержание, сторно"
+  CUSTOMER ||--o{ SPEND_ENTRY : "сумма для статуса"
+  PROMOTION ||--o{ PROMO_CODE : "коды"
+  PROMO_CODE ||--o{ REDEMPTION : "использования"
+  CUSTOMER ||--o| REFERRAL : "кто пригласил"
+  ORDER ||--o{ STEP_RUN : "журнал шагов процессов"
+  SETTINGS_VERSION ||--o{ ORDER : "правила на момент заказа"
+</pre></div>
+    <ul>
+      <li><b>Деньги</b> – только целые копейки (bigint), проценты – базисные пункты (1 % = 100). Кешбэк округляется вниз, скидки разносятся по строкам без потери копеек.</li>
+      <li><b>Журнал баллов</b> только дописывается: состояние «ожидает → подтверждён → аннулирован» выводится из последующих проводок. Баланс = подтверждённое − удержанное.</li>
+      <li><b>Настройки</b> версионируются: заказ хранит версию правил, возврат и подтверждение считаются по ней.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Путь заказа</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant К as Клиент (сайт)
+  participant A as API
+  participant W as Worker
+  participant Б as Т-Банк
+  participant Д as СДЭК / Яндекс
+  К->>A: корзина → расчёт (цены, промокод, баллы, доставка)
+  К->>A: оформить (Idempotency-Key)
+  A->>A: процесс «Оформление»: резерв остатков, кода, баллов, снимок адреса
+  A->>Б: создать платёж (ключ order:id:payment)
+  Б-->>A: вебхук «оплачено» (проверка подписи)
+  A->>W: событие order.paid
+  W->>W: процесс «Оплата»: списать баллы, кешбэк «ожидает», закрепить код и остатки
+  W->>Д: заявка (ключ order:id:shipment)
+  Д-->>A: статус «доставлен»
+  W->>W: через N дней – процесс «Завершение»: кешбэк подтверждён, сумма в статус, награда за друга
+  К->>A: возврат (до или после завершения)
+  A->>W: процесс «Возврат»: сторно по накопленной доле, баллы назад, деньги назад
+</pre></div>
+    <div class="tbl"><table>
+      <tr><th>Ключ повтора</th><th>Защищает от</th></tr>
+      <tr><td><code>order:{id}:hold</code> · <code>:hold:commit</code> · <code>:hold:release</code></td><td>двойного удержания и списания баллов</td></tr>
+      <tr><td><code>order:{id}:accrual</code> · <code>:confirm</code> · <code>:void</code></td><td>двойного кешбэка</td></tr>
+      <tr><td><code>order:{id}:payment</code> · <code>order:{id}:shipment</code></td><td>двух платежей и двух заявок в доставку при ретрае</td></tr>
+      <tr><td><code>cancel:{id}:back</code> · <code>return:{rid}:rev</code> · <code>return:{rid}:back</code></td><td>двойного возврата баллов и сторно</td></tr>
+      <tr><td><code>settle:{id}</code> · <code>ref:{id}:inviter</code></td><td>двойного зачёта в статус и двойной награды за друга</td></tr>
+    </table></div>
+  </section>
+
+  <section id="graph">
+    <h2>5. Процессы графом</h2>
+    <p><b>Сейчас:</b> пять процессов (оформление, оплата, завершение, отмена, возврат) описаны графом в <code>modules/orders/flows.ts</code>, движок <code>packages/kernel/flow.ts</code> идёт строго по рёбрам этого графа и пишет каждый шаг в журнал. Расхождения картинки с исполнением нет – это один объект. Но ветку выбирает код шага, и граф меняется только коммитом.</p>
+    <p><b>Решено (ADR-002, в работе):</b> граф становится данными и исполняется как есть – правка схемы в интерфейсе меняет порядок и ветки без кода.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  ED["Редактор процессов<br/>в админке"] --> DR["Черновик схемы<br/>JSON"]
+  DR --> VAL{"Проверка схемы"}
+  VAL -- "тупик, недостижимый шаг,<br/>чужое действие, нет «иначе»" --> ED
+  VAL -- "ок + прогон всех путей<br/>на тестовых данных" --> PUB["Публикация владельцем<br/>версия N"]
+  PUB --> DEF[("flow_definitions<br/>все версии")]
+  DEF --> ENG["Движок процессов"]
+  REG["Реестр действий в коде<br/>списать баллы, создать платёж, …"] --> ENG
+  ENG --> RUN[("flow_runs / step_runs<br/>журнал шагов")]
+</pre></div>
+    <div class="tbl"><table>
+      <tr><th>Кто что решает</th><th>Как</th></tr>
+      <tr><td>Порядок шагов и ветки</td><td>схема (данные): узлы ссылаются на действия из реестра, переходы – условия на <b>JSON Logic</b> над фактами шагов</td></tr>
+      <tr><td>Что делает шаг</td><td>код действия из реестра: проверяет свои предусловия, работает с ключом повтора, возвращает факты (<code>total_is_zero</code>, <code>delivery_mode</code>…)</td></tr>
+      <tr><td>Деньги</td><td>только код действий; в условиях – белый список операторов JSON Logic (<code>var, ==, !=, in, and, or, !</code>), сумм и арифметики нет – плохая схема может остановить процесс, но не испортить деньги</td></tr>
+      <tr><td>Версии</td><td>публикуется набор из пяти процессов целиком; заказ закрепляется за набором при создании и все его процессы идут по нему; опубликованные версии неизменяемы и выгружаются в git</td></tr>
+      <tr><td>Защита денег от правки схемы</td><td>денежные действия объявляют нужное состояние заказа (например, «оплачен») и проверяют его в базе; денежные развилки («сумма 0 ₽», «оплачен ли») закрыты для редактора; проверка набора: каждое удержание и начисление чем-то закрывается</td></tr>
+      <tr><td>Почему не BPMN / n8n</td><td>BPMN-движки для Node нишевые и хранят условия JS-строками; в n8n и похожих в шаг можно написать любой код – денежный контур не удержать</td></tr>
+    </table></div>
+    <p>Пример узла и перехода в схеме:</p>
+    <pre style="overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px"><code>{ "id": "zero_total", "action": "orders.checkTotal" }
+{ "from": "zero_total", "to": "mark_paid",     "when": { "==": [ { "var": "total_is_zero" }, true ] } }
+{ "from": "zero_total", "to": "await_payment", "else": true }</code></pre>
+  </section>
+
+  <section id="logs">
+    <h2>6. Логи и наблюдаемость</h2>
+    <p><b>Сейчас:</b> бизнес-журнал процессов (<code>step_runs</code>) – каждый шаг заказа с кодом ошибки, виден на странице «Процессы» демо. Технических логов в демо нет: там нет сервера.</p>
+    <p><b>Решено (ADR-002, с первым шагом сервера):</b> структурные логи; на боевом сервере – распространённый лёгкий стек Grafana (Loki), на тестовом стенде – VictoriaLogs (около 0,1 ГБ памяти, свой поиск), потому что стенд делит сервер с другими проектами. ELK не берём: ему нужно 3–4 ГБ памяти.</p>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  API["api"] -- "JSON-логи pino" --> OUT["stdout контейнеров"]
+  WK["worker"] -- "JSON-логи pino" --> OUT
+  OUT --> AL["Grafana Alloy<br/>сборщик"]
+  AL --> LK[("Loki – бой, 14 дней<br/>VictoriaLogs – стенд")]
+  LK --> GF["Grafana<br/>панели и поиск"]
+  GF -- "алерты без ПДн" --> TG["Telegram"]
+</pre></div>
+    <div class="tbl"><table>
+      <tr><th>Что пишем в каждую строку</th><th>Зачем</th></tr>
+      <tr><td><code>trace_id</code>, <code>order_id</code></td><td>найти всю историю заказа за несколько дней одним запросом</td></tr>
+      <tr><td><code>flow_id</code>, <code>flow_version</code>, <code>node_id</code>, <code>action</code>, <code>status</code>, <code>error_code</code>, <code>duration_ms</code></td><td>какой шаг какого процесса упал и сколько шёл</td></tr>
+      <tr><td><code>provider</code>, <code>attempt</code>, <code>http.route</code>, <code>http.status</code></td><td>сбои внешних служб: Т-Банк, СДЭК, Яндекс</td></tr>
+      <tr><td>Чего нет</td><td>почты, телефона, ФИО, адреса, токенов, карт – вырезаются до записи, это закреплено тестом</td></tr>
+    </table></div>
+    <p>Поля названы по стандарту OpenTelemetry: трассы и метрики подключаются позже без переделки логов.</p>
+  </section>
+
+  <section>
+    <h2>7. Где что лежит</h2>
+    <div class="tbl"><table>
+      <tr><th>Путь</th><th>Что там</th></tr>
+      <tr><td><code>packages/kernel/money.ts</code></td><td>копейки, проценты, разнесение суммы по строкам</td></tr>
+      <tr><td><code>packages/kernel/flow.ts</code></td><td>движок процессов: проверка графа, исполнение, журнал шагов (коды ошибок, без ПДн)</td></tr>
+      <tr><td><code>packages/kernel/modules.ts</code> · <code>time.ts</code></td><td>зависимости модулей, версии настроек на дату; строгий разбор дат ISO с поясом</td></tr>
+      <tr><td><code>modules/bonus|tiers|referral|promotions/rules.ts</code></td><td>правила программ лояльности</td></tr>
+      <tr><td><code>modules/orders/quote.ts · status.ts · flows.ts</code></td><td>расчёт корзины; статусы, отмены, возвраты, ключи; графы процессов</td></tr>
+      <tr><td><code>apps/demo/src/engine/</code></td><td>движок демо в браузере: клиенты, каталог, доставка, магазин, заказы (заменится сервером)</td></tr>
+      <tr><td><code>apps/demo/src/components/</code></td><td>экраны демо на Preact</td></tr>
+      <tr><td><code>docs/</code></td><td>замысел, архитектура, решения, техдолг, планы</td></tr>
+    </table></div>
+    <p>Запуск: <code>npm install && npm install --prefix apps/demo</code>, проверки – <code>npm run check</code> (типы и тесты), демо – <code>cd apps/demo && npm run dev</code>. Тесты лежат рядом с кодом (<code>*.test.ts</code>), каждый шаг разработки проходит независимого ревизора кода до коммита.</p>
+  </section>
+</div>
+<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs"; mermaid.initialize({ startOnLoad: true, theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });</script>
+</body>
+</html>
