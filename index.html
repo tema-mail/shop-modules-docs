@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Стек магазинных модулей</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: документ одной колонкой; стек таблицей, модули сеткой, поток денег графом */
+:root{
+  --bg:#f7f5f4; --surface:#ffffff; --fg:#1d1a1a; --muted:#6b6261; --line:#e4dedc;
+  --accent:#d6403a; --accent-soft:#fbe7e5; --warn:#a15c00; --warn-soft:#fff1dc; --ok:#2f7a4a; --ok-soft:#e3f3e8;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151213; --surface:#1e1a1a; --fg:#f1ecea; --muted:#a59c9a; --line:#352e2d;
+  --accent:#ff6a5f; --accent-soft:#3a1d1b; --warn:#f0b35a; --warn-soft:#33270f; --ok:#6fcf8f; --ok-soft:#15291c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151213; --surface:#1e1a1a; --fg:#f1ecea; --muted:#a59c9a; --line:#352e2d;
+  --accent:#ff6a5f; --accent-soft:#3a1d1b; --warn:#f0b35a; --warn-soft:#33270f; --ok:#6fcf8f; --ok-soft:#15291c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--f-body);padding-inline:16px;padding-block:40px 64px}
+.wrap{max-width:900px;margin:0 auto;display:grid;gap:44px}
+h1,h2{font-family:var(--f-display);text-wrap:balance;margin:0;font-style:italic;text-transform:uppercase}
+h1{font-size:clamp(28px,6vw,46px);font-weight:800;line-height:1.05;color:var(--accent)}
+h2{font-size:clamp(19px,3.4vw,24px);font-weight:800;line-height:1.15}
+h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+p{margin:0;max-width:70ch}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--accent-soft);padding:1px 5px;border-radius:4px;word-break:break-word}
+section{display:grid;gap:18px;padding-top:28px;border-top:2px solid var(--fg)}
+.lead{display:grid;gap:14px}
+.lead p{color:var(--muted)}
+.verdict{display:grid;gap:10px;padding:20px;border-radius:12px;background:var(--surface);border:2px solid var(--accent)}
+.verdict p{color:var(--fg)}
+ul,ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px 28px}
+.cols>div{display:grid;gap:8px;min-width:0;align-content:start}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.c-ok{background:var(--ok-soft);color:var(--ok)} .c-warn{background:var(--warn-soft);color:var(--warn)} .c-no{background:var(--accent-soft);color:var(--accent)}
+.diagram{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.box{display:grid;gap:8px;padding:14px 16px;border-radius:10px}
+.box.warn{background:var(--warn-soft)} .box.warn h3{color:var(--warn)}
+.box.ok{background:var(--ok-soft)} .box.ok h3{color:var(--ok)}
+.steps{counter-reset:s;display:grid;gap:12px;list-style:none;padding:0}
+.steps li{display:grid;grid-template-columns:2.4em 1fr;gap:4px 12px;align-items:start}
+.steps li::before{counter-increment:s;content:counter(s);font-family:var(--f-display);font-weight:800;font-style:italic;color:var(--accent);font-size:20px;line-height:1.2;grid-row:span 2}
+.steps b{display:block}
+.steps span{color:var(--muted);font-size:15px}
+.foot{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="lead">
+    <h3>Модульная система для интернет-магазинов · 16.10.2026</h3>
+    <h1>Стек и устройство</h1>
+    <p><a href="architecture.html">Полная архитектура для программистов →</a></p>
+    <p>Отдельный продукт для любых магазинов: одежда, цветы и другие. Подключается к сайту на коде. Каждая программа – отдельный модуль, магазин включает и настраивает только нужные.</p>
+  </header>
+
+  <div class="verdict">
+    <h3>Коротко</h3>
+    <p><b>База данных – PostgreSQL 18.</b> Свободная лицензия, бесплатная, поддержка до ноября 2030. В ней же живут очередь задач и журнал запусков, отдельные серверы не нужны.</p>
+    <p><b>Код – TypeScript на Node.js 24 LTS</b>, один язык для сервера, сайта и админки. Каждый магазин получает свой экземпляр: свою базу и контейнеры, данные клиентов разных магазинов не смешиваются.</p>
+  </div>
+
+  <section>
+    <h2>Стек</h2>
+    <div class="tbl"><table>
+      <tr><th>Слой</th><th>Выбор</th><th>Лицензия</th><th>Зачем</th></tr>
+      <tr><td>База данных</td><td><b>PostgreSQL 18</b></td><td>PostgreSQL, бесплатно</td><td>транзакции для денег, у каждого модуля своя схема</td></tr>
+      <tr><td>Сервер</td><td>Node.js 24 LTS → 26 после 28.10</td><td>MIT</td><td>стабильная долгая поддержка</td></tr>
+      <tr><td>Язык</td><td>TypeScript 7</td><td>Apache-2.0</td><td>типы ловят ошибки до запуска</td></tr>
+      <tr><td>API</td><td>Fastify 5 + Zod 4</td><td>MIT</td><td>проверка всех входящих данных, описание API для сайта</td></tr>
+      <tr><td>Работа с базой</td><td>Kysely + миграции на SQL</td><td>MIT</td><td>запросы к деньгам видны как есть</td></tr>
+      <tr><td>Фоновые задачи</td><td>pg-boss</td><td>MIT</td><td>подтверждение кешбэка через N дней, сроки оплаты, повторы – прямо в Postgres</td></tr>
+      <tr><td>Граф процессов</td><td>свой исполнитель + xyflow</td><td>MIT</td><td>логика видна нодами, упавший шаг подсвечен</td></tr>
+      <tr><td>Админка и острова для сайта</td><td>Astro 7 + Preact 11</td><td>MIT</td><td>ваш стек</td></tr>
+      <tr><td>Тесты</td><td>Vitest + настоящий Postgres в контейнере + fast-check</td><td>MIT</td><td>правила денег проверяются тысячами случайных примеров</td></tr>
+      <tr><td>Сбои и алерты</td><td>GlitchTip, Uptime Kuma → Telegram</td><td>MIT</td><td>один мониторинг на все магазины</td></tr>
+      <tr><td>Выкладка</td><td>Docker Compose + Caddy + pgBackRest</td><td>Apache / MIT</td><td>VPS в РФ, HTTPS, бэкап с восстановлением на любой момент</td></tr>
+    </table></div>
+    <p>Windmill и n8n не берём: на каждый магазин это лишний сервер, а логика частично живёт вне кода. Граф строится из того же описания, по которому код исполняется, поэтому он не может врать. Граф только для просмотра: логика меняется кодом, а пороги, проценты и сроки – формами настроек.</p>
+  </section>
+
+  <section>
+    <h2>Модули</h2>
+    <div class="tbl"><table>
+      <tr><th>Модуль</th><th>Что делает</th><th>Что настраивает магазин</th></tr>
+      <tr><td><b>Клиенты</b></td><td>вход по коду на email, профиль, адреса, согласия, удаление по 152-ФЗ</td><td>обязательные поля, срок кода</td></tr>
+      <tr><td><b>Каталог</b></td><td>цены и остатки – чтобы сервер сам проверял сумму заказа</td><td>откуда грузить каталог</td></tr>
+      <tr><td><b>Заказы</b></td><td>расчёт, оформление, отмены, возвраты, частичные возвраты</td><td>срок оплаты, окно возврата</td></tr>
+      <tr><td><b>Оплата</b></td><td>платёж и возврат денег через провайдера</td><td>провайдер</td></tr>
+      <tr><td><b>Бонусы</b></td><td>журнал баллов: начисления, списание, подтверждение, сгорание</td><td>награды за события, макс. % оплаты баллами, сгорание</td></tr>
+      <tr><td><b>Статусы</b></td><td>уровень по сумме покупок и процент кешбэка</td><td>пороги и проценты (у вас 3 / 5 / 7 / 10 %), период</td></tr>
+      <tr><td><b>Рефералы</b></td><td>код друга, награды обеим сторонам, антифрод</td><td>размер наград, баллы или промокод</td></tr>
+      <tr><td><b>Промокоды</b></td><td>публичные, одноразовые и персональные коды, выдача клиенту</td><td>процент или сумма, сроки, лимиты, совместимость</td></tr>
+      <tr><td><b>Доставка</b></td><td>расчёт и заявки, по отдельному адаптеру на службу</td><td>какие службы включены: СДЭК, Яндекс, самовывоз, курьер</td></tr>
+      <tr><td><b>Уведомления</b></td><td>письма и сообщения клиенту и магазину</td><td>шаблоны, каналы</td></tr>
+    </table></div>
+    <p>Модули не лезут в данные друг друга и общаются событиями. Выключенный модуль не ломает соседей: например, награду за реферала можно выдать баллами или промокодом, смотря что включено.</p>
+  </section>
+
+  <section>
+    <h2>Путь заказа</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  A["Расчёт корзины<br/>цены, промокод, баллы, доставка"] --> B["Оформление<br/>резерв баллов, кода, остатков"]
+  B --> C{"Оплачен в срок?"}
+  C -- нет --> X["Отмена<br/>резервы освобождены"]
+  C -- да --> D["Оплачен<br/>кешбэк «ожидает», заявка в доставку"]
+  D --> E["Доставлен"]
+  E --> F["Окно возврата закрыто<br/>кешбэк подтверждён, статус пересчитан, награда за реферала"]
+  D -. возврат .-> R["Сторно<br/>пропорционально строкам"]
+  F -. возврат .-> R
+</pre></div>
+    <p>Повтор запроса, двойной клик или сбой связи не дают двойных начислений, списаний и заявок: у каждой операции свой ключ.</p>
+  </section>
+
+  <section>
+    <h2>Промокоды</h2>
+    <ul>
+      <li>От Тильды берём простую форму: код, процент или сумма, срок, количество; регистр не важен; по умолчанию скидка только на товары; если скидки не суммируются, применяется самая выгодная.</li>
+      <li>Чего у Тильды нет, а у нас будет: лимит на клиента, одноразовые и персональные коды, выдача кода клиенту (за реферала, на день рождения, в подарок, как компенсация), правка кода после создания, никакого потолка в 500 кодов.</li>
+      <li>Позже, по образцу Medusa: кампании с бюджетом, правила по категориям и сумме, «купи X – получи Y».</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Агенты Claude</h2>
+    <div class="tbl"><table>
+      <tr><th>Роль</th><th>Что делает</th></tr>
+      <tr><td>Оркестратор</td><td>режет работу на маленькие шаги, выбирает скилл модуля</td></tr>
+      <tr><td>Скиллы модулей</td><td>правила и тесты своего модуля</td></tr>
+      <tr><td>Модератор</td><td>проверяет каждую правку до коммита: деньги не переписываются, у операций есть ключи, модули не лезут друг к другу</td></tr>
+      <tr><td>Дежурный</td><td>разбирает упавший шаг и готовит повтор после вашего «да»</td></tr>
+      <tr><td>Сверщик</td><td>объясняет расхождения из ночной сверки</td></tr>
+    </table></div>
+    <p>В самой системе нейросетей нет: баллы и деньги считает только код, иначе их не проверить и не воспроизвести.</p>
+  </section>
+
+  <section>
+    <h2>Где мы сейчас</h2>
+    <ol class="steps">
+      <li><b>Замысел, архитектура, правила – готово</b><span>Независимый ревизор нашёл в первой версии 5 блокеров, все замечания внесены. Репозиторий: github.com/tema-mail/shop-modules (приватный).</span></li>
+      <li><b>Правила денег – готово</b><span>Деньги и проценты, журнал баллов, статусы, рефералы, промокоды, расчёт и жизнь заказа, процессы-графы. Каждый шаг проверял ревизор; найдено и закрыто больше 30 реальных дефектов.</span></li>
+      <li><b>Демо-стенд с личным кабинетом – готово</b><span>Магазин одежды и цветов: вход по коду, корзина, промокоды, баллы, тест-оплата, доставка кнопками, перемотка времени, настройки магазина, процессы графом. 146 тестов, сборка в GitHub зелёная.</span></li>
+      <li><b>Дальше</b><span>Публикация демо на GitHub Pages (нужен публичный репозиторий), затем сервер на Postgres по тем же правилам и подключение к сайту магазина на Astro.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Нужно от вас</h2>
+    <div class="box warn"><h3>Решения, без которых не собрать заказы</h3><ul>
+      <li>Провайдер оплаты: ЮKassa, CloudPayments или Т-Банк.</li>
+      <li>Кто главный по каталогу: наша система (загрузка товаров из таблицы или API) или сайт магазина.</li>
+      <li>Возврат, когда бонусы уже потрачены: минус на балансе, удержание из возврата или списание в убыток.</li>
+      <li>Статус за всё время или за последние 12 месяцев; начислять ли кешбэк на часть, оплаченную баллами; сколько процентов заказа можно оплатить баллами.</li>
+    </ul></div>
+  </section>
+</div>
+<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs"; mermaid.initialize({ startOnLoad: true, theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });</script>
+</body>
+</html>
