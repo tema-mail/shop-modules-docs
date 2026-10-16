@@ -181,8 +181,8 @@ sequenceDiagram
 
   <section id="graph">
     <h2>5. Процессы графом</h2>
-    <p><b>Сейчас:</b> пять процессов (оформление, оплата, завершение, отмена, возврат) описаны графом в <code>modules/orders/flows.ts</code>, движок <code>packages/kernel/flow.ts</code> идёт строго по рёбрам этого графа и пишет каждый шаг в журнал. Расхождения картинки с исполнением нет – это один объект. Но ветку выбирает код шага, и граф меняется только коммитом.</p>
-    <p><b>Решено (ADR-002, в работе):</b> граф становится данными и исполняется как есть – правка схемы в интерфейсе меняет порядок и ветки без кода.</p>
+    <p><b>Сделано (ADR-002, этапы 1–3):</b> пять процессов (оформление, оплата, завершение, отмена, возврат) – схемы-данные в <code>modules/orders/flows-v2.ts</code>. Движок <code>packages/kernel/flow-v2.ts</code> исполняет ровно проверенную и замороженную схему: действие возвращает факты, ветку выбирает условие схемы. Страница «Процессы» рисует граф из тех же объектов. Заказ закреплён за версией набора процессов.</p>
+    <p><b>Дальше (этап 4):</b> редактор схемы в админке и публикация нового набора – с прогоном путей, разницей с прошлой версией и выгрузкой в git.</p>
     <div class="diagram"><pre class="mermaid">
 flowchart LR
   ED["Редактор процессов<br/>в админке"] --> DR["Черновик схемы<br/>JSON"]
@@ -204,14 +204,25 @@ flowchart LR
       <tr><td>Почему не BPMN / n8n</td><td>BPMN-движки для Node нишевые и хранят условия JS-строками; в n8n и похожих в шаг можно написать любой код – денежный контур не удержать</td></tr>
     </table></div>
     <p>Пример узла и перехода в схеме:</p>
-    <pre style="overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px"><code>{ "id": "zero_total", "action": "orders.checkTotal" }
-{ "from": "zero_total", "to": "mark_paid",     "when": { "==": [ { "var": "total_is_zero" }, true ] } }
-{ "from": "zero_total", "to": "await_payment", "else": true }</code></pre>
+    <pre style="overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px"><code>{ "id": "zero_total", "action": "orders.checkZeroTotal" }
+{ "from": "zero_total", "to": "start_payment", "when": { "==": [ { "var": "total_is_zero" }, true ] }, "locked": true }
+{ "from": "zero_total", "to": "await_payment", "else": true, "locked": true }</code></pre>
+    <div class="tbl"><table>
+      <tr><th>Правило проверки схемы</th><th>Что не даёт сделать</th></tr>
+      <tr><td>форма, циклы, недостижимые шаги, полнота и перекрытие веток</td><td>процесс, который зависнет или выберет две ветки сразу</td></tr>
+      <tr><td>условие – только на факты шагов, пройденных на всех путях (доминаторы)</td><td>ветку по факту, которого ещё нет</td></tr>
+      <tr><td><code>locked</code> + <code>lockedNodes</code></td><td>поменять денежную развилку или действие на её концах</td></tr>
+      <tr><td><code>actions</code> процесса</td><td>вставить «заказ оплачен» в оформление</td></tr>
+      <tr><td><code>required</code> – на всех путях к каждому концу</td><td>убрать удержание баллов или спрятать его в одну ветку</td></tr>
+      <tr><td><code>mustPrecede</code></td><td>списать баллы до оплаты, удержать после создания заказа</td></tr>
+      <tr><td><code>requires</code> у денежного действия (в рантайме, по статусу заказа)</td><td>выполнить деньги в неверном состоянии, даже если схема пропущена</td></tr>
+      <tr><td>сквозная проверка набора (<code>flow-set.ts</code>)</td><td>удержание, кешбэк, промокод или резерв, которые нигде не закрываются</td></tr>
+    </table></div>
   </section>
 
   <section id="logs">
     <h2>6. Логи и наблюдаемость</h2>
-    <p><b>Сейчас:</b> бизнес-журнал процессов (<code>step_runs</code>) – каждый шаг заказа с кодом ошибки, виден на странице «Процессы» демо. Технических логов в демо нет: там нет сервера.</p>
+    <p><b>Сейчас:</b> бизнес-журнал процессов (<code>step_runs</code>) – каждый шаг заказа с кодом ошибки, виден на странице «Процессы» демо. Модуль структурных логов готов (<code>packages/kernel/log.ts</code>: pino, одна строка JSON, сквозные поля, вырезание ПДн и секретов), подключается вместе с сервером.</p>
     <p><b>Решено (ADR-002, с первым шагом сервера):</b> структурные логи; на боевом сервере – распространённый лёгкий стек Grafana (Loki), на тестовом стенде – VictoriaLogs (около 0,1 ГБ памяти, свой поиск), потому что стенд делит сервер с другими проектами. ELK не берём: ему нужно 3–4 ГБ памяти.</p>
     <div class="diagram"><pre class="mermaid">
 flowchart LR
@@ -237,11 +248,13 @@ flowchart LR
     <div class="tbl"><table>
       <tr><th>Путь</th><th>Что там</th></tr>
       <tr><td><code>packages/kernel/money.ts</code></td><td>копейки, проценты, разнесение суммы по строкам</td></tr>
-      <tr><td><code>packages/kernel/flow.ts</code></td><td>движок процессов: проверка графа, исполнение, журнал шагов (коды ошибок, без ПДн)</td></tr>
+      <tr><td><code>packages/kernel/flow-schema.ts</code> · <code>flow-set.ts</code></td><td>формат схемы процесса, условия JSON Logic, проверка схемы и всего набора</td></tr>
+      <tr><td><code>packages/kernel/flow-v2.ts</code> · <code>flow.ts</code></td><td>движок процессов: реестр действий, <code>requires</code>, исполнение; запись журнала шагов (коды ошибок, без ПДн)</td></tr>
+      <tr><td><code>packages/kernel/log.ts</code></td><td>структурные логи без ПДн</td></tr>
       <tr><td><code>packages/kernel/modules.ts</code> · <code>time.ts</code></td><td>зависимости модулей, версии настроек на дату; строгий разбор дат ISO с поясом</td></tr>
       <tr><td><code>modules/bonus|tiers|referral|promotions/rules.ts</code></td><td>правила программ лояльности</td></tr>
-      <tr><td><code>modules/orders/quote.ts · status.ts · flows.ts</code></td><td>расчёт корзины; статусы, отмены, возвраты, ключи; графы процессов</td></tr>
-      <tr><td><code>apps/demo/src/engine/</code></td><td>движок демо в браузере: клиенты, каталог, доставка, магазин, заказы (заменится сервером)</td></tr>
+      <tr><td><code>modules/orders/quote.ts · status.ts · flows-v2.ts</code></td><td>расчёт корзины; статусы, отмены, возвраты, ключи; схемы пяти процессов, действия и их правила</td></tr>
+      <tr><td><code>apps/demo/src/engine/</code></td><td>демо в браузере: клиенты, каталог, доставка, магазин; <code>order-actions.ts</code> – реализации действий, <code>order-engine.ts</code> – запуск процессов и наборы (заменится сервером)</td></tr>
       <tr><td><code>apps/demo/src/components/</code></td><td>экраны демо на Preact</td></tr>
       <tr><td><code>docs/</code></td><td>замысел, архитектура, решения, техдолг, планы</td></tr>
     </table></div>
