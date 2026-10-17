@@ -55,7 +55,7 @@ title: Архитектура shop-modules
 | catalog | products, variants, prices, stock | importCatalog, setPrice, reserveStock, releaseStock / priceOf | catalog.changed | order.placed / cancelled | источник каталога (импорт, API сайта) |
 | orders | orders (+снимок), lines, status_history, returns, return_lines | quote, place, cancel, setStatus, createReturn / get | order.placed / paid / cancelled / delivered / **settled** / returned | payment.*, shipment.* | окно возврата, срок оплаты |
 | payments | payments, refunds | createPayment, refund | payment.succeeded / failed / refunded | order.cancelled, order.returned | провайдер |
-| bonus | ledger (только дописывается), holds | previewRedeem, hold, release, grant / balance, history | bonus.pending / confirmed / reversed / expired | order.*, referral.reward_due | макс. % списания, сгорание, награды за события |
+| bonus | ledger (только дописывается; удержания – проводки hold/commit/release) | previewRedeem, hold, release, grant / balance, history | bonus.pending / confirmed / reversed / expired | order.*, referral.reward_due | макс. % списания, сгорание, награды за события |
 | tiers | rules (версии), customer_spend, tier_history | getTier(customer, at) | tier.changed | order.settled, order.returned | пороги и %, период (всё время / 12 мес.) |
 | referral | codes, referrals | issueCode / myCode | referral.reward_due | customer.registered, order.settled | награды сторонам, антифрод |
 | promotions | promotions, promo_codes, code_grants, redemptions (MVP); campaigns, rules, actions, code_batches – позже | evaluate, reserve, commit, release, grantCode | promo.redeemed | order.* , referral.reward_due | см. ниже |
