@@ -28,7 +28,7 @@ title: Архитектура shop-modules
 | Логи и алерты | pino → stdout; GlitchTip и Uptime Kuma – один общий на все магазины; алерты в Telegram без ПДн | 10.4 / 6.2 / 2.5 | MIT | – | Loki, OpenTelemetry позже |
 | Деплой | Docker Compose + Caddy 2 + pgBackRest (копия вне площадки) | – | Apache / MIT | VPS в РФ, TLS, восстановление на момент времени | – |
 
-Совместимость TypeScript 7 с `astro check` проверяется до первого шага админки (ТЕХДОЛГ).
+`astro check` не поддерживает TypeScript 7 – типы админки проверяет tsc (ТЕХДОЛГ).
 
 **Windmill не берём:** на каждый магазин это ещё сервер, воркеры, своя БД (1–2 ГБ RAM), логика частично вне git и AGPL.
 
