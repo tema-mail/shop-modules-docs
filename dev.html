@@ -65,6 +65,12 @@ tr:last-child td{border-bottom:0}
 .nums b{font-family:var(--f-display);font-style:italic;font-size:26px;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.1}
 .nums span{color:var(--muted);font-size:14px}
 .foot{color:var(--muted);font-size:14px}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.shots figure{margin:0;display:grid;gap:6px;min-width:0}
+.shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.shots figcaption{font-size:13px;color:var(--muted)}
+.shots .wide{grid-column:1/-1}
+.shots .phone{max-width:300px}
 </style>
 </head>
 <body>
@@ -79,7 +85,7 @@ tr:last-child td{border-bottom:0}
   <div class="verdict">
     <h3>Коротко</h3>
     <p><b>Правила денег – чистые функции</b> в <code>modules/&lt;модуль&gt;/rules.ts</code>: без базы и сети, покрыты тестами, включая проверки свойствами на тысячах случайных примеров. Вокруг них – слой хранения на PostgreSQL и HTTP-API на Fastify. <b>Процессы заказа</b> – схемы-данные: движок исполняет их как есть, админка рисует и правит те же объекты.</p>
-    <p><b>Работает на стенде</b> (<code>store.deford.ru</code>, под паролем): сервер на PostgreSQL 18, ядро (повторы запросов, события «ровно один раз», версии настроек, шифрованные секреты), клиенты и вход по коду на почту, журнал баллов и приветственный бонус по событию, персонал с ролями и обязательной 2FA, админка «Клиенты» на отдельном хосте, обезличивание по 152-ФЗ, ночной шифрованный бэкап. <b>Дальше:</b> журнал по клиенту в карточке (S6d), заказы на сервере (S7), затем Т-Банк, СДЭК и Яндекс.</p>
+    <p><b>Работает на стенде</b> (<code>store.deford.ru</code>, под паролем): сервер на PostgreSQL 18, ядро (события «ровно один раз», версии настроек, шифрованные секреты), клиенты и вход по коду на почту, журнал баллов и приветственный бонус по событию, персонал с ролями и обязательной 2FA, админка «Клиенты» на отдельном хосте (итоги, поиск, карточка, журнал действий по клиенту), обезличивание по 152-ФЗ, ночной шифрованный бэкап. <b>Дальше:</b> заказы на сервере (S7), затем Т-Банк, СДЭК и Яндекс – <a href="#roadmap">дорожная карта</a>.</p>
   </div>
 
   <ol class="toc">
@@ -100,7 +106,10 @@ tr:last-child td{border-bottom:0}
     <li><a href="#deploy">14. Выкладка и бэкап</a></li>
     <li><a href="#process">15. Как ведётся разработка</a></li>
     <li><a href="#files">16. Где что лежит</a></li>
-    <li><a href="#review">17. Замечания тимлида – что сделано</a></li>
+    <li><a href="#api">17. Справочник API</a></li>
+    <li><a href="#roadmap">18. Дорожная карта</a></li>
+    <li><a href="#local">19. Запуск у себя</a></li>
+    <li><a href="#review">20. Замечания тимлида – что сделано</a></li>
   </ol>
 
   <section id="status">
@@ -112,7 +121,7 @@ tr:last-child td{border-bottom:0}
       <tr><td>Клиенты: регистрация с согласием, вход по коду на почту, сессии, адреса, бан</td><td><span class="chip c-ok">API на стенде</span></td><td>лимиты кодов и попыток – в базе; письма с кодом – в перехватчик Mailpit (бета); экраны витрины (ЛК демо работает в браузере) подключаются к API вместе с заказами, HTTP-маршруты адресов – с личным кабинетом</td></tr>
       <tr><td>Баллы: журнал проводок на Postgres, приветственный бонус по событию регистрации, ручные начисления и списания</td><td><span class="chip c-ok">работает на стенде</span></td><td>кешбэк, статусы, рефералы на сервере – с заказами (S7)</td></tr>
       <tr><td>Персонал: роли, argon2id, обязательная 2FA, коды восстановления, журнал действий</td><td><span class="chip c-ok">работает на стенде</span></td><td>управление сотрудниками из админки (сейчас первый владелец – командой на сервере)</td></tr>
-      <tr><td>Админка «Клиенты» на <code>admin.store.deford.ru</code>: поиск, карточка, контакты по праву, ручные баллы, блокировка, обезличивание</td><td><span class="chip c-ok">работает на стенде</span></td><td>журнал действий по клиенту и итоги над списком (S6d); разделы «Заказы», «Персонал»</td></tr>
+      <tr><td>Админка «Клиенты» на <code>admin.store.deford.ru</code>: итоги над списком, поиск, карточка, контакты по праву, ручные баллы, блокировка, журнал действий по клиенту, обезличивание</td><td><span class="chip c-ok">работает на стенде</span></td><td>разделы «Заказы» (S8), «Персонал» (управление сотрудниками из админки)</td></tr>
       <tr><td>Обезличивание по 152-ФЗ: каждый модуль стирает своё по событию <code>customer.erased</code></td><td><span class="chip c-ok">работает на стенде</span></td><td>обработчики заказов и платежей появятся вместе с модулями</td></tr>
       <tr><td>Личный кабинет, корзина, оформление, оплата с отказами банка, отмена, возврат, завершение с кешбэком</td><td><span class="chip c-warn">работает в демо</span></td><td>перенос на сервер – заказы (S7); банк и доставка в демо – тестовые кнопки</td></tr>
       <tr><td>Процессы заказа графом: редактор, публикация наборов, откат версий</td><td><span class="chip c-warn">работает в демо</span></td><td><code>flow_sets</code> в Postgres – с заказами (S7)</td></tr>
@@ -316,6 +325,7 @@ flowchart LR
       <tr><td>Клиенты: список и карточка (маски)</td><td>да</td><td>да</td><td>да</td></tr>
       <tr><td>Полные контакты, поиск по началу почты и телефона</td><td>да</td><td>да</td><td>нет</td></tr>
       <tr><td>Баллы: история, начисление, списание; бан</td><td>да</td><td>да</td><td>нет</td></tr>
+      <tr><td>Журнал действий по клиенту (просмотр сам пишется в журнал)</td><td>да</td><td>нет</td><td>нет</td></tr>
       <tr><td>Обезличивание, экспорт, управление персоналом, возврат денег</td><td>да + повторный код</td><td>нет</td><td>нет</td></tr>
     </table></div>
     <p><b>Журнал действий</b> <code>staff.audit</code>: кто, что, с кем, код причины, результат (ok / denied / failed). Действие и запись «ok» – одна транзакция (нет действия без записи и записи без действия); отказ в праве пишется отдельно – и для чтения тоже; сбой – откат действия и отдельная запись «failed». Свободный текст сотрудника – только в комментарии к записи: журнал неизменяем, а комментарий стирается при обезличивании клиента.</p>
@@ -330,8 +340,18 @@ flowchart LR
       <li><b>Сессия истекла посреди работы</b> – форма входа поверх страницы: введённое не теряется, запрос повторяется один раз.</li>
       <li><b>Списки причин</b> (ручные баллы, бан) – из кода модулей при сборке: один источник для сервера и страниц.</li>
       <li><b>Ручные баллы</b>: ключ операции создаётся при открытии формы; двойной клик – одна проводка и одна запись; после окончательного ответа (200/400/409) – новый ключ, после сбоя сети – прежний (сервер мог записать, не ответив).</li>
-      <li><b>Вид</b> – по готовым кабинетам: шапка и стили – перенос эталона, вход и список – по эталону, таблица и фильтр – как «Продажи» эталонного магазина. Своё – только то, чего в эталонах нет, и это названо.</li>
+      <li><b>Итоги над списком</b> – всего, активных, заблокированных, новых за 7 дней: один запрос при открытии страницы, сбой итогов не ломает список.</li>
+      <li><b>Журнал действий по клиенту</b> – только владельцу: кто (имя, «сервер» для CLI, «удалённый сотрудник»), что, причина, результат, комментарий; просмотр первой страницы сам пишется в журнал; у обезличенного видна только дата запроса. Без права страница даже не запрашивает журнал.</li>
+      <li><b>Вид</b> – по готовым кабинетам: шапка и стили – перенос эталона, вход и список – по эталону, таблица, фильтр и плитки-итоги – как «Продажи» эталонного магазина. Своё – только то, чего в эталонах нет, и это названо.</li>
     </ul>
+    <h4>Как выглядит (снимки на вымышленных данных)</h4>
+    <div class="shots">
+      <figure><img src="img/admin-login.png" alt="Вход в админку: почта и пароль" loading="lazy"><figcaption>Вход: без него на странице только эта форма</figcaption></figure>
+      <figure><img src="img/admin-erase.png" alt="Форма обезличивания по запросу клиента" loading="lazy"><figcaption>Обезличивание: номер клиента и дата запроса; если второй фактор старше 5 минут – появится поле кода</figcaption></figure>
+      <figure class="wide"><img src="img/admin-customers.png" alt="Список клиентов с плитками-итогами, поиском и масками почты и телефона" loading="lazy"><figcaption>Список: итоги, поиск по кнопке, фильтр статуса, маски с сервера</figcaption></figure>
+      <figure class="wide"><img src="img/admin-card.png" alt="Карточка клиента: профиль, адреса, согласия, баллы, формы действий, журнал" loading="lazy"><figcaption>Карточка (вид владельца): профиль с масками, адреса без точного места, согласия, баллы, действия, журнал</figcaption></figure>
+      <figure class="phone"><img src="img/admin-customers-phone.png" alt="Список клиентов на телефоне" loading="lazy"><figcaption>Телефон, 390 px: №, имя и статус без прокрутки</figcaption></figure>
+    </div>
   </section>
 
   <section id="pdn">
@@ -563,7 +583,7 @@ flowchart LR
   <section id="process">
     <h2>15. Как ведётся разработка</h2>
     <div class="nums">
-      <div><b>476</b><span>тестов в 50 файлах, CI на настоящем PostgreSQL 18</span></div>
+      <div><b>485</b><span>тестов в 50 файлах, CI на настоящем PostgreSQL 18</span></div>
       <div><b>4</b><span>сквозных проверки в Chromium за Caddy с CSP стенда</span></div>
       <div><b>8</b><span>миграций, одна очередь для ядра и модулей</span></div>
       <div><b>≤3</b><span>файла кода на шаг, файл ≤800 строк</span></div>
@@ -604,8 +624,73 @@ flowchart LR
     <p>Запуск: <code>npm install</code> (и <code>--prefix apps/demo</code>, <code>--prefix apps/admin</code>), проверки – <code>npm run check</code> (типы и тесты; тесты с базой – при <code>TEST_DATABASE_URL</code>), демо – <code>cd apps/demo && npm run dev</code>, админка – <code>cd apps/admin && npm run dev</code> (порт 4322, <code>/api</code> проксируется на API).</p>
   </section>
 
+  <section id="api">
+    <h2>17. Справочник API</h2>
+    <p>Все ответы – JSON. Ошибка – <code>{ "error": код, "message": текст для человека }</code>, без эха ввода. Изменяющие запросы (POST) – только с <code>Origin</code> своего хоста и <code>Content-Type: application/json</code> (иначе 403); лимит – 120 запросов в минуту с IP. Когда заданы оба адреса (витрины и админки, как на стенде), маршруты <code>/api/admin/*</code> отвечают только на хосте админки, остальные – только на хосте витрины; <code>/api/health</code> – на обоих.</p>
+    <h4>Общее и клиент (хост витрины)</h4>
+    <div class="tbl"><table>
+      <tr><th>Маршрут</th><th>Кто</th><th>Тело / параметры</th><th>Ответ</th><th>Ошибки</th></tr>
+      <tr><td><code>GET /api/health</code></td><td>все</td><td>–</td><td><code>{status, version, env, db}</code></td><td>503 – база не ответила за 1 с</td></tr>
+      <tr><td><code>POST /api/auth/code</code></td><td>все</td><td><code>{email}</code></td><td><code>{ok}</code> – одинаково для новой и существующей почты</td><td>400 <code>email_invalid</code>; 503 <code>mail_failed</code>. Лимит кодов наружу не виден – тот же <code>{ok}</code>; 429 – только общий лимит 120/мин</td></tr>
+      <tr><td><code>POST /api/auth/login</code></td><td>все</td><td><code>{email, code, consent?: {pdn: true, marketing?}}</code></td><td><code>{ok}</code> + cookie <code>__Host-sid</code></td><td>401 <code>code_invalid</code>; 400 <code>consent_required</code> (только после верного кода); 403 <code>login_blocked</code></td></tr>
+      <tr><td><code>GET /api/me</code></td><td>клиент</td><td>–</td><td><code>{customerId}</code></td><td>401</td></tr>
+      <tr><td><code>POST /api/auth/logout</code> · <code>/logout-all</code></td><td>клиент</td><td><code>{}</code></td><td><code>{ok}</code></td><td>401 (для «везде»)</td></tr>
+    </table></div>
+    <h4>Вход сотрудника (хост админки)</h4>
+    <div class="tbl"><table>
+      <tr><th>Маршрут</th><th>Кто</th><th>Тело</th><th>Ответ</th><th>Ошибки</th></tr>
+      <tr><td><code>POST /api/admin/login</code></td><td>все</td><td><code>{email, password}</code></td><td><code>{ok, next: "mfa" | "password"}</code> + полусессия 5 мин</td><td>401 – один текст на всё; 503 <code>busy</code></td></tr>
+      <tr><td><code>POST /api/admin/mfa</code></td><td>полусессия</td><td><code>{code}</code> – TOTP или код восстановления</td><td><code>{ok}</code> + сессия <code>__Host-staff</code></td><td>401</td></tr>
+      <tr><td><code>POST /api/admin/password</code></td><td>полусессия временного пароля</td><td><code>{password}</code> (6–128 знаков)</td><td><code>{ok, next: "enroll", otpauth}</code></td><td>400 <code>password_invalid</code>; 401</td></tr>
+      <tr><td><code>POST /api/admin/enroll</code></td><td>полусессия</td><td><code>{code}</code></td><td><code>{ok, recoveryCodes}</code> – 10 кодов один раз</td><td>401</td></tr>
+      <tr><td><code>GET /api/admin/me</code></td><td>сотрудник</td><td>–</td><td><code>{memberId, role, permissions}</code></td><td>401</td></tr>
+      <tr><td><code>POST /api/admin/reauth</code></td><td>сотрудник</td><td><code>{code}</code></td><td><code>{ok}</code> – второй фактор свежий 5 мин</td><td>401</td></tr>
+      <tr><td><code>POST /api/admin/logout</code> · <code>/logout-all</code></td><td>сотрудник</td><td><code>{}</code></td><td><code>{ok}</code></td><td>401 (для «везде»)</td></tr>
+    </table></div>
+    <h4>Клиенты в админке</h4>
+    <div class="tbl"><table>
+      <tr><th>Маршрут</th><th>Право</th><th>Тело / параметры</th><th>Ответ</th><th>Журнал и ошибки</th></tr>
+      <tr><td><code>GET /api/admin/customers</code></td><td><code>customers.view</code></td><td><code>?q&amp;status&amp;cursor</code>; по началу почты и телефона – только с <code>customers.reveal</code></td><td><code>{items, nextCursor}</code>, 50 на страницу, маски</td><td>поиск по началу контакта – запись <code>customers.search_reveal</code>; 400 <code>query_invalid</code></td></tr>
+      <tr><td><code>GET /api/admin/customers/summary</code></td><td><code>customers.view</code></td><td>–</td><td><code>{total, active, banned, newWeek}</code></td><td>–</td></tr>
+      <tr><td><code>GET /api/admin/customers/:id</code></td><td><code>customers.view</code> (баллы – <code>points.history</code>)</td><td>–</td><td>карточка: маски, адреса без точного места, согласия, баллы или <code>null</code></td><td>404</td></tr>
+      <tr><td><code>GET …/:id/contacts</code></td><td><code>customers.reveal</code></td><td>–</td><td><code>{email, phone, addresses}</code> целиком</td><td>запись <code>customer.reveal</code>; 404</td></tr>
+      <tr><td><code>GET …/:id/audit</code></td><td><code>customers.audit</code></td><td><code>?cursor</code></td><td><code>{items, nextCursor}</code>: когда, кто, действие, причина, результат, комментарий</td><td>первая страница – запись <code>customer.audit.view</code>; 404; 400</td></tr>
+      <tr><td><code>POST …/:id/points</code></td><td><code>points.grant</code> / <code>points.debit</code></td><td><code>{op, points, reason, key: "manual:…", note?}</code></td><td><code>{ok, repeated, available}</code></td><td>запись с комментарием; повтор ключа – без записи; 409 <code>points.insufficient</code> / <code>key.conflict</code> / <code>not_active</code>; 400</td></tr>
+      <tr><td><code>POST …/:id/ban</code> · <code>…/unban</code></td><td><code>customers.ban</code></td><td><code>{reasonCode, note?}</code> · <code>{note?}</code></td><td><code>{ok}</code>; бан закрывает сессии клиента</td><td>запись; 409 <code>not_active</code> / <code>not_banned</code>; 404</td></tr>
+      <tr><td><code>POST …/:id/erase</code></td><td><code>customers.erase</code> + свежий второй фактор</td><td><code>{confirmId, requestedAt: "ГГГГ-ММ-ДД"}</code></td><td><code>{ok}</code></td><td>запись с датой запроса; 403 <code>reauth_required</code>; 409 <code>already_erased</code>; 404; 400</td></tr>
+    </table></div>
+    <p>Без права – 403 <code>denied</code> и запись «denied» в журнал (и для чтения). Сессия истекла – 401 <code>unauthorized</code>.</p>
+  </section>
+
+  <section id="roadmap">
+    <h2>18. Дорожная карта</h2>
+    <div class="tbl"><table>
+      <tr><th>Этап</th><th>Что даёт</th><th>Статус</th></tr>
+      <tr><td>S1–S5</td><td>стенд, ядро, клиенты и вход, баллы на Postgres, персонал с 2FA</td><td><span class="chip c-ok">готово</span></td></tr>
+      <tr><td>S6a–f (с подшагами S6c, S6d)</td><td>админка «Клиенты»: API, страницы, итоги, журнал по клиенту, обезличивание</td><td><span class="chip c-ok">готово</span></td></tr>
+      <tr><td>S7a–e</td><td>заказы на сервере: каталог и расчёт, оформление, <code>flow_sets</code> и процессы в Postgres, попытки оплаты и «требует внимания», подключение витрины к серверу; вместе с ними – итоги по заказам и фильтры лояльности в «Клиентах», обезличивание заказов</td><td><span class="chip c-warn">следующий</span></td></tr>
+      <tr><td>S8</td><td>админка «Заказы» (по эталону «Продаж») и «Требует внимания»</td><td><span class="chip c-no">план</span></td></tr>
+      <tr><td>S9</td><td>СДЭК – учебный контур: заявка, отмена, статусы</td><td><span class="chip c-no">план</span></td></tr>
+      <tr><td>S10</td><td>Т-Банк – тестовый терминал, чеки 54-ФЗ: оплата, отмена, возврат</td><td><span class="chip c-no">план</span></td></tr>
+      <tr><td>S11</td><td>сервис рассылки в РФ (письмо с кодом на настоящую почту), процедура при утечке, сбор ошибок GlitchTip</td><td><span class="chip c-no">план</span></td></tr>
+      <tr><td>До боя</td><td>Яндекс Доставка (после СДЭК), боевой сервер в РФ, Loki + Grafana и алерты, бэкапы в S3, юридические тексты, список частых паролей</td><td><span class="chip c-no">план</span></td></tr>
+    </table></div>
+  </section>
+
+  <section id="local">
+    <h2>19. Запуск у себя</h2>
+    <ol class="steps">
+      <li><b>Зависимости</b><span><code>npm install</code>, затем <code>npm install --prefix apps/demo</code> и <code>npm install --prefix apps/admin</code>. Node 24.</span></li>
+      <li><b>Проверки без базы</b><span><code>npm run check</code> – типы (tsc для сервера, демо и админки) и тесты; тесты с базой пропускаются.</span></li>
+      <li><b>Проверки с базой</b><span>нужен PostgreSQL 18 и <code>TEST_DATABASE_URL</code> (суперпользователь): каждый файл тестов сам создаёт роли <code>shop_owner</code> и <code>shop_app</code>, свою базу и прогоняет миграции. Так же их гоняет CI.</span></li>
+      <li><b>Демо</b><span><code>cd apps/demo &amp;&amp; npm run dev</code> – магазин целиком в браузере, без сервера.</span></li>
+      <li><b>API и админка</b><span>API: <code>APP_ENV=dev</code>, <code>SHOP_ID</code>, строка базы – <code>DATABASE_URL</code> (или файл <code>DATABASE_URL_FILE</code>), ключи – файлами <code>*_KEY_FILE</code> (полный список – в <code>deploy/stand/compose.yml</code>, проверка – <code>apps/api/src/config.ts</code>), миграции – <code>node apps/api/src/migrate.ts</code> под владельцем, первый сотрудник – <code>node apps/api/src/staff-cli.ts bootstrap</code>. Админка: <code>cd apps/admin &amp;&amp; npm run dev</code> – порт 4322, <code>/api</code> проксируется на API (порт 3000); в dev-режиме API ждёт именно этот адрес в <code>Origin</code>.</span></li>
+      <li><b>Сквозная проверка</b><span><code>node --test apps/admin/e2e/customers.e2e.ts</code> – нужны база, собранная админка за Caddy на 4322 и Chromium Playwright; как собрать окружение – <code>.github/workflows/admin-e2e.yml</code>.</span></li>
+    </ol>
+  </section>
+
   <section id="review">
-    <h2>17. Замечания тимлида – что сделано</h2>
+    <h2>20. Замечания тимлида – что сделано</h2>
     <p>После первого просмотра тимлид дал три замечания. Ниже – что было, что сделано и где это проверить. Для каждого – честный статус: что уже на сервере, а что пока в демо.</p>
     <div class="tbl"><table>
       <tr><th>Замечание</th><th>Было</th><th>Сделано</th><th>Статус</th></tr>
@@ -617,9 +702,9 @@ flowchart LR
       <h3>Как это выглядит сейчас</h3>
       <ul>
         <li><b>Витрина и демо</b> – <code>store.deford.ru</code> (пароль стенда): демо-магазин с процессами, редактором и личным кабинетом – его «сервер» пока работает в браузере. API клиентов (вход по коду, сессии) на этом хосте уже работает, но экраны витрины к нему подключатся вместе с заказами (S7).</li>
-        <li><b>Админка</b> – <code>admin.store.deford.ru</code> (пароль стенда, затем вход сотрудника с 2FA): раздел «Клиенты» – поиск, карточка, контакты по праву, баллы, блокировка, обезличивание.</li>
+        <li><b>Админка</b> – <code>admin.store.deford.ru</code> (пароль стенда, затем вход сотрудника с 2FA): раздел «Клиенты» – итоги, поиск, карточка, контакты по праву, баллы, блокировка, журнал действий, обезличивание. Снимки – в <a href="#admin">разделе 7</a>.</li>
         <li><b>Сервер</b> – PostgreSQL 18, восемь миграций, четыре модуля на сервере (клиенты, бонусы, персонал, уведомления), события через outbox и pg-boss, ночной шифрованный бэкап с проверкой восстановления.</li>
-        <li><b>Проверки</b> – 476 тестов на настоящей базе, сквозная проверка админки в браузере, мутационные прогоны, ревизия каждого шага, внешние проверки при каждой выкладке.</li>
+        <li><b>Проверки</b> – 485 тестов на настоящей базе, сквозная проверка админки в браузере, мутационные прогоны, ревизия каждого шага, внешние проверки при каждой выкладке.</li>
       </ul>
     </div>
     <div class="box warn">
@@ -627,7 +712,7 @@ flowchart LR
       <ul>
         <li>Заказы, оплата и доставка на сервере (S7, затем Т-Банк, СДЭК, Яндекс) – сейчас только в демо.</li>
         <li>Сборщик логов, поиск и алерты; боевой сервер в РФ с Loki + Grafana и бэкапами в S3.</li>
-        <li>Журнал действий по клиенту в карточке, управление персоналом из админки, список частых паролей.</li>
+        <li>Управление персоналом из админки, список частых паролей, фильтры «статус лояльности» и «требует внимания» (с заказами).</li>
         <li>Юридические тексты – после проверки юристом.</li>
       </ul>
     </div>
